@@ -1,90 +1,106 @@
-import React, { useState } from "react";
-import "./App.css"; // Assume your styles are in App.css
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import React, { useState, useEffect } from "react";
 
 const App = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [startY, setStartY] = useState(0);
-  const [currentY, setCurrentY] = useState(0);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pages = [
+    [
+      {
+        position: "relative",
 
-  // const toggleMenu = () => {
-  //   setIsOpen(!isOpen);
-  // };
+        height: "100vh",
+        backgroundColor: "#f0f0f0",
+        // clipPath:
+        //   "path('M 150 0 A 150 150 0 0 0 0 150 V 400 H 300 V 150 A 150 150 0 0 0 150 0 Z')",
+        overflow: "hidden",
+      },
+      `${process.env.PUBLIC_URL}/img/image1.png`,
+    ],
+    [
+      {
+        position: "relative",
+        height: "100vh",
+        backgroundColor: "#f0f0f0",
+        overflow: "hidden",
+      },
+      `${process.env.PUBLIC_URL}/img/image3.jpg`,
+    ],
+    [
+      {
+        position: "relative",
+        height: "100vh",
+        // width: "80%",
+        // left: "10%",
+        // right: "10%",
+        backgroundColor: "#f0f0f0",
+        // clipPath:
+        //   "path('M 150 0 A 150 150 0 0 0 0 150 V 400 H 300 V 150 A 150 150 0 0 0 150 0 Z')",
+        overflow: "hidden",
+      },
+      `${process.env.PUBLIC_URL}/img/image2.png`,
+    ],
+  ]; // 각 페이지 색상
+  const [startY, setStartY] = useState(0); // 터치 시작 위치 저장
+
+  const handleWheel = (event) => {
+    event.preventDefault();
+    const direction = event.deltaY > 0 ? 1 : -1; // 휠 방향
+    scrollToPage(direction);
+  };
 
   const handleTouchStart = (event) => {
-    setStartY(event.touches[0].clientY);
-    setStartX(event.touches[0].clientX);
+    setStartY(event.touches[0].clientY); // 터치 시작 위치 저장
   };
 
   const handleTouchMove = (event) => {
-    setCurrentY(event.touches[0].clientY);
-    setCurrentX(event.touches[0].clientX);
-  };
+    const endY = event.touches[0].clientY; // 터치 이동 위치
+    const direction = startY - endY > 0 ? 1 : -1; // 위로 스와이프: 1, 아래로 스와이프: -1
 
-  const handleTouchEnd = () => {
-    // Handle vertical swipe for the bottom sheet
-    if (startY - currentY > 50) {
-      setIsOpen(true);
-    } else if (currentY - startY > 50) {
-      setIsOpen(false);
-    }
-
-    // Handle horizontal swipe for the carousel
-    if (startX - currentX > 50) {
-      // Swipe left
-      setCurrentIndex((prevIndex) => Math.min(prevIndex + 1, 2));
-    } else if (currentX - startX > 50) {
-      // Swipe right
-      setCurrentIndex((prevIndex) => Math.max(prevIndex - 1, 0));
+    // 충분히 스와이프한 경우 페이지 변경
+    if (Math.abs(startY - endY) > 50) {
+      scrollToPage(direction);
+      setStartY(endY); // 새로운 터치 시작 위치로 갱신
     }
   };
+
+  const scrollToPage = (direction) => {
+    let newPage = currentPage + direction;
+    if (newPage < 0) newPage = 0;
+    if (newPage >= pages.length) newPage = pages.length - 1;
+
+    setCurrentPage(newPage);
+  };
+
+  useEffect(() => {
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [currentPage]);
 
   return (
-    <div className="app">
-      {/* Header Section */}
-      <div className="header">
-        <h1 className="header-title">혜수 ❤ 형욱 결혼합니다</h1>
-        {/* <p className="sub-title">
-          2025년 3월 30일 14:30
-          <br />
-          로얄파크 컨밴션
-        </p> */}
-        <div className="carousel">
-          <div
-            className="carousel-images"
-            style={{
-              transform: `translateX(-${currentIndex * 100}%)`,
-              transition: "transform 0.5s ease",
-            }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <img src="./img/image1.jpg" alt="1" />
-            <img src="./img/image2.jpg" alt="2" />
-            <img src="./img/image3.jpg" alt="3" />
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Sheet */}
+    <div
+      style={{ height: "100vh", overflow: "hidden" }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+    >
       <div
-        className={`bottom-sheet ${isOpen ? "open" : ""}`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        style={{
+          height: "100vh",
+          transform: `translateY(-${currentPage * 100}vh)`,
+          transition: "transform 0.5s ease-in-out",
+        }}
       >
-        <div className="drag-handle"></div>
-        <div className="sheet-content">
-          <p>
-            2025년 3월 30일 14:30
-            <br />
-            로얄파크 컨벤션
-          </p>
-        </div>
+        {pages.map((style_list) => (
+          <div style={style_list[0]}>
+            <img
+              src={style_list[1]}
+              alt="Wedding Couple"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
